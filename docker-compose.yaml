@@ -1,0 +1,62 @@
+version: '3.8'
+
+services:
+
+  # Reverse Proxy Traefik
+  reverse-proxy:
+    image: traefik:v2.10
+    command:
+      - "--api.insecure=true"
+      - "--providers.docker=true"
+      - "--entrypoints.web.address=:80"
+    ports:
+      - "80:80"     
+      - "8081:8080"  
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    networks:
+      - web
+
+  # Flask Soft Design (Stripe intégré)
+  flask-soft:
+    build: ./flask-soft-design
+    environment:
+      - STRIPE_SECRET=sk_test_12345
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.flask.rule=Host(`flask.local`)"
+      - "traefik.http.services.flask.loadbalancer.server.port=5000"
+    networks:
+      - web
+
+  # Django Argon
+  django-argon:
+    build: ./django-argon
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.django.rule=Host(`django.local`)"
+      - "traefik.http.services.django.loadbalancer.server.port=8000"
+    networks:
+      - web
+
+  # React Berry
+  react-berry:
+    build: ./react-berry
+    labels:
+      - "traefik.enable=true"
+      - "traefik.http.routers.react.rule=Host(`react.local`)"
+      - "traefik.http.services.react.loadbalancer.server.port=80"
+    networks:
+      - web
+
+  # Static HTML/CSS App (accès direct)
+  html-app:
+    build: ./html-app
+    ports:
+      - "8080:80" 
+    networks:
+      - web
+
+networks:
+  web:
+    driver: bridge

@@ -1,18 +1,12 @@
-FROM python:3.9
+FROM python:3.11-slim
 
-# set environment variables
-ENV PYTHONDONTWRITEBYTECODE 1
-ENV PYTHONUNBUFFERED 1
+WORKDIR /app
 
 COPY requirements.txt .
-# install python dependencies
-RUN pip install --upgrade pip
 RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
 
-# running migrations
-RUN python manage.py migrate
+EXPOSE 8000
 
-# gunicorn
-CMD ["gunicorn", "--config", "gunicorn-cfg.py", "config.wsgi"]
+CMD ["gunicorn", "app.wsgi:application", "--bind", "0.0.0.0:8000"]
